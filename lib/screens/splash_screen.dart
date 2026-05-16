@@ -49,32 +49,20 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Sesuaikan dengan warna temamu
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ikon Logo Sementara (Bisa diganti dengan gambar logomu nanti)
-            const Icon(
-              Icons.home_work_rounded,
-              size: 100,
-              color: Colors.blueAccent,
-            ),
+            Image.asset('assets/logo.png', width: 150, height: 150),
+
             const SizedBox(height: 24),
 
-            // Nama Aplikasi
-            const Text(
-              'PintuKos',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 40),
 
-            // Indikator Loading yang elegan
-            const CircularProgressIndicator(color: Colors.blueAccent),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+            ),
           ],
         ),
       ),

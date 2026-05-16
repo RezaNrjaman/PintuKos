@@ -95,7 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.maps_home_work, color: AppTheme.primaryContainer),
+            Image.asset(
+              'assets/logo.png', // Sesuaikan dengan nama file logomu
+              width: 32, // Sesuaikan ukurannya agar pas
+              height: 32,
+            ),
             const SizedBox(width: 8),
             Text(
               'PintuKos',
@@ -364,7 +368,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Kec. Setiabudi, Jakarta Selatan',
+                      'Bandung',
                       style: Theme.of(context).textTheme.labelSmall,
                     ),
                   ],
