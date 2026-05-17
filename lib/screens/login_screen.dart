@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main_nav_screen.dart';
 import 'register_screen.dart';
+import '../config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Mengirim data ke API Golang
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/api/login'),
+        Uri.parse('${AppConfig.baseUrl}/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': _emailController.text,
@@ -125,11 +126,13 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                //==========================LOGO=====================================
                 const Icon(
                   Icons.home_work_rounded,
                   size: 80,
                   color: Colors.blueAccent,
                 ),
+                //==========================LOGO=====================================
                 const SizedBox(height: 24),
                 const Text(
                   'Masuk ke PintuKos',

@@ -4,6 +4,7 @@ import 'login_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
 
 // 1. Mengubah menjadi StatefulWidget
 class ProfileScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/profile'),
+        Uri.parse('${AppConfig.baseUrl}/api/profile'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

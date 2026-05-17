@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../theme/app_theme.dart';
 import 'detail_screen.dart';
+import '../config.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }) async {
     try {
       // 1. Merakit URL dinamis berdasarkan filter yang dikirim
-      String url = 'http://10.0.2.2:8081/api/kos?';
+      String url = '${AppConfig.baseUrl}/api/kos?';
       if (query != null && query.isNotEmpty) url += 'search=$query&';
       if (type != null && type != 'Semua') url += 'type=$type&';
       if (minPrice != null && minPrice.isNotEmpty)

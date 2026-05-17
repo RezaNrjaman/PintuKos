@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'detail_screen.dart';
+import '../config.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -33,7 +34,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/favorites'),
+        Uri.parse('${AppConfig.baseUrl}/api/favorites'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -60,7 +61,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/api/favorites/toggle/$kosId'),
+        Uri.parse('${AppConfig.baseUrl}/api/favorites/toggle/$kosId'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

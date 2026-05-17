@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../theme/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
 
 class DetailScreen extends StatefulWidget {
   final int kosId; // Variabel untuk menerima ID dari Home
@@ -30,7 +31,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> fetchDetailKos() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/kos/${widget.kosId}'),
+        Uri.parse('${AppConfig.baseUrl}/api/kos/${widget.kosId}'),
       );
 
       if (response.statusCode == 200) {
@@ -84,7 +85,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/favorites/check/${widget.kosId}'),
+        Uri.parse('${AppConfig.baseUrl}/api/favorites/check/${widget.kosId}'),
         headers: {'Authorization': 'Bearer $token'}, // Kirim surat izin (Token)
       );
 
@@ -108,7 +109,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/api/favorites/toggle/${widget.kosId}'),
+        Uri.parse('${AppConfig.baseUrl}/api/favorites/toggle/${widget.kosId}'),
         headers: {'Authorization': 'Bearer $token'}, // Kirim surat izin (Token)
       );
 
