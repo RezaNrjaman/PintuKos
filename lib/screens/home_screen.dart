@@ -205,7 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           name: prop['name'] as String,
                           price: prop['price'] as String,
-                          type: prop['type'] as String,
                           typeColor: prop['typeColor'] as Color,
                           typeTextColor: prop['typeTextColor'] as Color,
                           imageUrl: prop['image']?.toString() ?? '',
@@ -257,7 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context, {
     required String name,
     required String price,
-    required String type,
     required Color typeColor,
     required Color typeTextColor,
     required String imageUrl,
@@ -323,7 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    type,
                     style: TextStyle(
                       color: typeTextColor,
                       fontSize: 12,
