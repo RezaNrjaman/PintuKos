@@ -71,10 +71,20 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Dihapus dari Favorit 💔'),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Dihapus dari Favorit'),
+                ],
+              ),
               backgroundColor: Colors.grey,
-              duration: Duration(seconds: 1),
+              duration: const Duration(seconds: 1),
             ),
           );
         }

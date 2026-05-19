@@ -14,8 +14,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String currentSearch = "";
-  String currentType = "Semua";
-  String selectedFilter = 'Semua';
   List<Map<String, dynamic>> allProperties = [];
   bool isLoading = true;
 
@@ -27,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchDataDariGolang({
     String? query,
-    String? type,
     String? minPrice,
     String? maxPrice,
   }) async {
@@ -35,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // 1. Merakit URL dinamis berdasarkan filter yang dikirim
       String url = '${AppConfig.baseUrl}/api/kos?';
       if (query != null && query.isNotEmpty) url += 'search=$query&';
-      if (type != null && type != 'Semua') url += 'type=$type&';
       if (minPrice != null && minPrice.isNotEmpty)
         url += 'min_price=$minPrice&';
       if (maxPrice != null && maxPrice.isNotEmpty)
@@ -51,13 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             // 3. Memasukkan data ke dalam variabel allProperties seperti kodemu sebelumnya
             allProperties = jsonData.map((item) {
-              Color typeColor = item['type'] == 'Putri'
-                  ? AppTheme.secondaryContainer
-                  : AppTheme.primaryFixedDim;
-              Color typeTextColor = item['type'] == 'Putri'
-                  ? AppTheme.onSecondaryContainer
-                  : AppTheme.onPrimaryFixed;
-
               return {
                 'id': item['id'],
                 'name': item['name'],
@@ -65,8 +54,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 'type': item['type'],
                 'location': item['location'],
                 'description': item['description'],
-                'typeColor': typeColor,
-                'typeTextColor': typeTextColor,
               };
             }).toList();
             isLoading = false;
@@ -85,12 +72,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredProperties = selectedFilter == 'Semua'
-        ? allProperties
-        : allProperties
-              .where((prop) => prop['type'] == selectedFilter)
-              .toList();
-
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -140,34 +121,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   onChanged: (value) {
                     currentSearch = value;
                     if (value.isEmpty) {
-                      fetchDataDariGolang(
-                        query: currentSearch,
-                        type: currentType,
-                      );
+                      fetchDataDariGolang(query: currentSearch);
                     }
                   },
                   onSubmitted: (value) {
-                    fetchDataDariGolang(
-                      query: currentSearch,
-                      type: currentType,
-                    );
+                    fetchDataDariGolang(query: currentSearch);
                   },
                 ),
               ),
             ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildCategoryButton('Semua'),
-                  _buildCategoryButton('Putra'),
-                  _buildCategoryButton('Putri'),
-                  _buildCategoryButton('Campur'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+
             isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(48.0),
@@ -179,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   )
-                : filteredProperties.isEmpty
+                : allProperties.isEmpty
                 ? const Padding(
                     padding: EdgeInsets.all(32.0),
                     child: Text("Tidak ada kos yang sesuai dengan filter ini."),
@@ -188,9 +151,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredProperties.length,
+                    itemCount: allProperties.length,
                     itemBuilder: (context, index) {
-                      final prop = filteredProperties[index];
+                      final prop = allProperties[index];
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -205,8 +168,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           name: prop['name'] as String,
                           price: prop['price'] as String,
-                          typeColor: prop['typeColor'] as Color,
-                          typeTextColor: prop['typeTextColor'] as Color,
                           imageUrl: prop['image']?.toString() ?? '',
                         ),
                       );
@@ -218,46 +179,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label) {
-    bool isSelected = selectedFilter == label;
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            currentType = "Putra"; // Ubah status kategori aktif
-          });
-          // Tarik data baru dari Golang dengan filter Putra (dan bawa teks pencariannya jika ada)
-          fetchDataDariGolang(query: currentSearch, type: currentType);
-        },
-        child: Chip(
-          label: Text(
-            label,
-            style: TextStyle(
-              color: isSelected
-                  ? AppTheme.onPrimary
-                  : AppTheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          backgroundColor: isSelected
-              ? AppTheme.primaryContainer
-              : AppTheme.surfaceContainerHigh,
-          side: BorderSide(
-            color: isSelected ? Colors.transparent : AppTheme.outlineVariant,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        ),
-      ),
-    );
-  }
-
   Widget _buildKosCard(
     BuildContext context, {
     required String name,
     required String price,
-    required Color typeColor,
-    required Color typeTextColor,
     required String imageUrl,
   }) {
     return Container(
@@ -307,27 +232,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-              ),
-              Positioned(
-                top: 12,
-                left: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: typeColor,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    style: TextStyle(
-                      color: typeTextColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ),
             ],
           ),
@@ -407,43 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // Fungsi pintar pencetak tombol kategori
-  Widget _buildCategoryButton(String title) {
-    // Mengecek apakah tombol ini adalah kategori yang sedang dipilih
-    bool isSelected = currentType == title;
-
-    return GestureDetector(
-      onTap: () {
-        // 1. Ubah tulisan di memori aplikasi
-        setState(() {
-          currentType = title;
-        });
-        // 2. Tarik data baru dengan filter yang diklik
-        fetchDataDariGolang(query: currentSearch, type: currentType);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.teal
-              : Colors.white, // Hijau jika aktif, putih jika tidak
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.teal : Colors.grey.shade300,
-          ),
-        ),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black54,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
       ),
     );
   }

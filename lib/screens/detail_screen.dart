@@ -122,7 +122,17 @@ class _DetailScreenState extends State<DetailScreen> {
           // Tampilkan notifikasi pop-up
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(data['message']),
+              content: Row(
+                children: [
+                  Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(data['message']),
+                ],
+              ),
               backgroundColor: isFavorite ? Colors.pink : Colors.grey,
               duration: const Duration(seconds: 1),
             ),
@@ -314,41 +324,48 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLowest,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: _launchWhatsApp,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryContainer,
-            foregroundColor: AppTheme.onPrimary,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.chat),
-              SizedBox(width: 8),
-              Text(
-                'Tanya via WhatsApp',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      bottomNavigationBar:
+          (kosData['wa_number'] != null &&
+              kosData['wa_number'].toString().isNotEmpty)
+          ? Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerLowest,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
+              child: ElevatedButton(
+                onPressed: _launchWhatsApp,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryContainer,
+                  foregroundColor: AppTheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.chat),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tanya via WhatsApp',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : const SizedBox.shrink(), // Menyembunyikan bagian bawah jika tidak ada nomor HP
     );
   }
 
