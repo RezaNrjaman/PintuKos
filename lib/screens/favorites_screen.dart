@@ -207,14 +207,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: Text(
-                      kos['type'] ?? '-',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -227,13 +219,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    kos['price'] ?? '-',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.teal,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        kos['rating']?.toString() ?? '0.0',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

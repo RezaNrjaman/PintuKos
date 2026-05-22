@@ -50,8 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
               return {
                 'id': item['id'],
                 'name': item['name'],
-                'price': item['price'],
-                'type': item['type'],
+                'rating': item['rating'] ?? 0.0,
                 'location': item['location'],
                 'description': item['description'],
               };
@@ -167,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: _buildKosCard(
                           context,
                           name: prop['name'] as String,
-                          price: prop['price'] as String,
+                          rating: prop['rating'] as double,
                           imageUrl: prop['image']?.toString() ?? '',
                         ),
                       );
@@ -182,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildKosCard(
     BuildContext context, {
     required String name,
-    required String price,
+    required double rating,
     required String imageUrl,
   }) {
     return Container(
@@ -248,14 +247,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
                     Text(
-                      price,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.primaryContainer,
+                      rating.toString(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(width: 4),
                     Text(
-                      ' / bln',
+                      '(Google Maps)',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

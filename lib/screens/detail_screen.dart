@@ -273,13 +273,20 @@ class _DetailScreenState extends State<DetailScreen> {
                   const SizedBox(height: 24),
                   Row(
                     children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Colors.amber,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
-                        kosData['price'] ?? '-',
+                        kosData['rating']?.toString() ?? '0.0',
                         style: Theme.of(context).textTheme.displayMedium
                             ?.copyWith(color: AppTheme.primaryContainer),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        ' / bln',
+                        'Rating Google Maps',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.outline,
                         ),
