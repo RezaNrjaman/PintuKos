@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 
 class DetailScreen extends StatefulWidget {
-  final int kosId; // Variabel untuk menerima ID dari Home
+  final int kosId;
 
   const DetailScreen({super.key, required this.kosId});
 
@@ -27,7 +27,6 @@ class _DetailScreenState extends State<DetailScreen> {
     _checkFavoriteStatus();
   }
 
-  // Mengambil data detail dari Golang berdasarkan ID
   Future<void> fetchDetailKos() async {
     try {
       final response = await http.get(
@@ -45,28 +44,20 @@ class _DetailScreenState extends State<DetailScreen> {
     } catch (e) {
       print("Error mengambil detail: $e");
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
       }
     }
   }
 
-  // Fungsi WhatsApp Dinamis
   Future<void> _launchWhatsApp() async {
     if (kosData.isEmpty) return;
-
     String phone = kosData['wa_number'] ?? '';
     String kosName = kosData['name'] ?? '';
-
-    // Template pesan otomatis
     String text =
         'Halo, saya melihat info $kosName di PintuKos. Apakah masih ada kamar kosong?';
-
     final Uri waUrl = Uri.parse(
       'https://wa.me/$phone?text=${Uri.encodeComponent(text)}',
     );
-
     if (!await launchUrl(waUrl, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -76,25 +67,20 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  // Mengecek warna awal hati saat halaman detail dibuka
   Future<void> _checkFavoriteStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('jwt_token');
-
     if (token == null) return;
 
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/api/favorites/check/${widget.kosId}'),
-        headers: {'Authorization': 'Bearer $token'}, // Kirim surat izin (Token)
+        headers: {'Authorization': 'Bearer $token'},
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
-          setState(() {
-            isFavorite = data['is_favorite'];
-          });
+          setState(() => isFavorite = data['is_favorite']);
         }
       }
     } catch (e) {
@@ -102,24 +88,18 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  // Mengirim perintah saat tombol hati ditekan
   Future<void> _toggleFavorite() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('jwt_token');
-
     try {
       final response = await http.post(
         Uri.parse('${AppConfig.baseUrl}/api/favorites/toggle/${widget.kosId}'),
-        headers: {'Authorization': 'Bearer $token'}, // Kirim surat izin (Token)
+        headers: {'Authorization': 'Bearer $token'},
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
-          setState(() {
-            isFavorite = data['is_favorite']; // Ubah warna hati otomatis
-          });
-          // Tampilkan notifikasi pop-up
+          setState(() => isFavorite = data['is_favorite']);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -144,9 +124,28 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  Future<void> _openMaps() async {
+    final name = kosData['name'] ?? '';
+    final location = kosData['location'] ?? '';
+
+    final String searchQuery = Uri.encodeComponent('$name, $location');
+
+    // Format URL Universal Google Maps yang resmi
+    final Uri mapsUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$searchQuery',
+    );
+
+    if (!await launchUrl(mapsUrl, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka Maps')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Tampilan saat loading
     if (isLoading) {
       return const Scaffold(
         backgroundColor: AppTheme.background,
@@ -160,7 +159,6 @@ class _DetailScreenState extends State<DetailScreen> {
       );
     }
 
-    // Tampilan jika data gagal dimuat
     if (kosData.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),
@@ -168,14 +166,8 @@ class _DetailScreenState extends State<DetailScreen> {
       );
     }
 
-    // Mengamankan data fasilitas
-    List<dynamic> facilities = kosData['facilities'] ?? [];
-    Color typeColor = kosData['type'] == 'Putri'
-        ? AppTheme.secondaryContainer
-        : AppTheme.primaryFixedDim;
-    Color typeTextColor = kosData['type'] == 'Putri'
-        ? AppTheme.onSecondaryContainer
-        : AppTheme.onPrimaryFixed;
+    List<dynamic> imageUrls = kosData['image_urls'] ?? [];
+    String imageUrl = imageUrls.isNotEmpty ? imageUrls[0] : '';
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -189,10 +181,33 @@ class _DetailScreenState extends State<DetailScreen> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    'https://picsum.photos/seed/kos${kosData['name'].length}/600/400', // Gambar dinamis sementara
-                    fit: BoxFit.cover,
-                  ),
+                  imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.home_work_rounded,
+                                  size: 80,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: Icon(
+                              Icons.home_work_rounded,
+                              size: 80,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -229,48 +244,42 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: typeColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      kosData['type'] ?? '-',
-                      style: TextStyle(
-                        color: typeTextColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Text(
                     kosData['name'] ?? '-',
                     style: Theme.of(context).textTheme.displayMedium,
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 18,
-                        color: AppTheme.outline,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          kosData['location'] ?? '-',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppTheme.outline),
+
+                  GestureDetector(
+                    onTap: _openMaps,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 18,
+                          color: AppTheme.primaryContainer,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            kosData['location'] ?? '-',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.primaryContainer,
+                                  decoration: TextDecoration.underline,
+                                ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.open_in_new,
+                          size: 14,
+                          color: AppTheme.primaryContainer,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
+
                   Row(
                     children: [
                       const Icon(
@@ -294,24 +303,30 @@ class _DetailScreenState extends State<DetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 32),
-                  Text(
-                    'Fasilitas',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: facilities
-                        .map(
-                          (fac) => _buildFacilityItem(
-                            Icons.check_circle_outline,
-                            fac.toString(),
-                          ),
-                        )
-                        .toList(),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _openMaps,
+                      icon: const Icon(Icons.map_outlined),
+                      label: const Text('Lihat Lokasi di Google Maps'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.primaryContainer,
+                        side: const BorderSide(
+                          color: AppTheme.primaryContainer,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 32),
+
+                  // ❌ PERUBAHAN: Judul 'Fasilitas' dan komponen looping Wrap/Chips untuk menampilkan
+                  // fasilitas kos dari response backend lama telah dihapus sepenuhnya di sini untuk
+                  // menghindari error render "null" atau penumpukan UI kosong.
                   Text(
                     'Deskripsi',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -372,35 +387,7 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
               ),
             )
-          : const SizedBox.shrink(), // Menyembunyikan bagian bawah jika tidak ada nomor HP
-    );
-  }
-
-  Widget _buildFacilityItem(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: AppTheme.primaryContainer, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
+          : const SizedBox.shrink(),
     );
   }
 }

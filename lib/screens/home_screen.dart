@@ -23,36 +23,28 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchDataDariGolang();
   }
 
-  Future<void> fetchDataDariGolang({
-    String? query,
-    String? minPrice,
-    String? maxPrice,
-  }) async {
+  Future<void> fetchDataDariGolang({String? query}) async {
     try {
-      // 1. Merakit URL dinamis berdasarkan filter yang dikirim
       String url = '${AppConfig.baseUrl}/api/kos?';
       if (query != null && query.isNotEmpty) url += 'search=$query&';
-      if (minPrice != null && minPrice.isNotEmpty)
-        url += 'min_price=$minPrice&';
-      if (maxPrice != null && maxPrice.isNotEmpty)
-        url += 'max_price=$maxPrice&';
 
-      // 2. Menembak ke backend Golang
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
-
         if (mounted) {
           setState(() {
-            // 3. Memasukkan data ke dalam variabel allProperties seperti kodemu sebelumnya
             allProperties = jsonData.map((item) {
+              final imageUrls = item['image_urls'] as List<dynamic>? ?? [];
               return {
                 'id': item['id'],
-                'name': item['name'],
-                'rating': item['rating'] ?? 0.0,
-                'location': item['location'],
-                'description': item['description'],
+                'name': item['name'] ?? '',
+                'rating': (item['rating'] ?? 0.0).toDouble(),
+                'location': item['location'] ?? '',
+                'description': item['description'] ?? '',
+                'image': imageUrls.isNotEmpty ? imageUrls[0] : '',
+                'latitude': item['latitude'] ?? 0.0,
+                'longitude': item['longitude'] ?? 0.0,
               };
             }).toList();
             isLoading = false;
@@ -76,11 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Image.asset(
-              'assets/logo.png', // Sesuaikan dengan nama file logomu
-              width: 32, // Sesuaikan ukurannya agar pas
-              height: 32,
-            ),
+            Image.asset('assets/logo.png', width: 32, height: 32),
             const SizedBox(width: 8),
             Text(
               'PintuKos',
@@ -116,7 +104,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 14,
                     ),
                   ),
-
                   onChanged: (value) {
                     currentSearch = value;
                     if (value.isEmpty) {
@@ -129,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
             isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(48.0),
@@ -167,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           context,
                           name: prop['name'] as String,
                           rating: prop['rating'] as double,
+                          location: prop['location'] as String,
                           imageUrl: prop['image']?.toString() ?? '',
                         ),
                       );
@@ -182,6 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
     BuildContext context, {
     required String name,
     required double rating,
+    required String location,
     required String imageUrl,
   }) {
     return Container(
@@ -206,26 +194,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
-                child:
-                    imageUrl
-                        .isNotEmpty // 1. Cek apakah string URL-nya tidak kosong
+                child: imageUrl.isNotEmpty
                     ? Image.network(
-                        // JIKA TIDAK KOSONG, munculkan gambar seperti biasa
                         imageUrl,
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            width: double.infinity,
+                            color: Colors.grey.shade200,
+                            child: const Center(
+                              child: Icon(
+                                Icons.home_work_rounded,
+                                size: 80,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
                       )
                     : Container(
-                        // JIKA KOSONG, munculkan kotak pengganti
                         height: 200,
                         width: double.infinity,
-                        color:
-                            Colors.grey.shade200, // Warna latar abu-abu lembut
+                        color: Colors.grey.shade200,
                         child: const Center(
                           child: Icon(
-                            Icons
-                                .home_work_rounded, // Ikon rumah bawaan Flutter
+                            Icons.home_work_rounded,
                             size: 80,
                             color: Colors.grey,
                           ),
@@ -254,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      rating.toString(),
+                      rating.toStringAsFixed(1),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -266,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(
@@ -275,45 +271,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppTheme.outline,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      'Bandung',
-                      style: Theme.of(context).textTheme.labelSmall,
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: Theme.of(context).textTheme.labelSmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _buildFacilityChip(Icons.wifi, 'Wifi'),
-                    const SizedBox(width: 8),
-                    _buildFacilityChip(Icons.ac_unit, 'AC'),
-                  ],
-                ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFacilityChip(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: AppTheme.outlineVariant),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppTheme.outlineVariant,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ],
