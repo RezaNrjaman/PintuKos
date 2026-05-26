@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 
-// 1. Mengubah menjadi StatefulWidget
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -15,23 +14,25 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // 2. Variabel penyimpan data
+  // Variabel penyimpan data
   String userName = "Memuat...";
   String userEmail = "Memuat...";
 
-  // 3. initState: Fungsi yang otomatis jalan saat halaman dibuka
   @override
   void initState() {
     super.initState();
-    _fetchProfile(); // Memanggil fungsi tarik data
+    _fetchProfile();
   }
 
-  // 4. Posisi Fungsi Pengambil Data diletakkan di sini, di dalam class State
+  // Fungsi Pengambil Data yang sudah dilengkapi pengaman Null
   Future<void> _fetchProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('jwt_token');
 
-    if (token == null) return;
+    if (token == null) {
+      _logout(showDialog: false);
+      return;
+    }
 
     try {
       final response = await http.get(
@@ -44,10 +45,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (mounted) {
+        if (mounted && data is Map<String, dynamic>) {
           setState(() {
-            userName = data['name'] ?? 'Pengguna';
-            userEmail = data['email'] ?? '';
+            userName = data['name']?.toString() ?? 'Pengguna';
+            userEmail = data['email']?.toString() ?? '';
           });
         }
       } else {
@@ -60,62 +61,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     } catch (e) {
-      print("Gagal mengambil profil: $e");
+      if (mounted) {
+        setState(() {
+          userName = "Terjadi Kesalahan Jaringan";
+        });
+      }
     }
   }
 
+  // INI ADALAH FUNGSI LOGOUT
+  Future<void> _logout({bool showDialog = true}) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jwt_token'); // Hapus token
+
+    if (mounted) {
+      // Tendang ke halaman login dan hapus riwayat halaman
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (Route<dynamic> route) => false,
+      );
+    }
+  }
+
+  // SESUAI REQUEST: Logika Edit Profil HANYA Nama & Otomatis Update UI secara Instan
   void _showEditProfileDialog() {
+    // SESUAI REQUEST: emailController dihapus karena email tidak boleh diubah
     final nameController = TextEditingController(text: userName);
-    final emailController = TextEditingController(text: userEmail);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Edit Profil'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(labelText: 'Nama'),
+              decoration: const InputDecoration(labelText: 'Nama Lengkap'),
             ),
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
+            // SESUAI REQUEST: TextField 'Email Baru' telah dihapus sepenuhnya dari dialog
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: AppTheme.outline),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
-              // Panggil API PUT ke backend
+              String inputName = nameController.text.trim();
+              if (inputName.isEmpty) return;
+
               SharedPreferences prefs = await SharedPreferences.getInstance();
               String? token = prefs.getString('jwt_token');
 
-              final response = await http.put(
-                Uri.parse('${AppConfig.baseUrl}/api/profile'),
-                headers: {
-                  'Authorization': 'Bearer $token',
-                  'Content-Type': 'application/json',
-                },
-                body: json.encode({
-                  'name': nameController.text,
-                  'email': emailController.text,
-                }),
-              );
-
-              if (response.statusCode == 200) {
-                Navigator.pop(context);
-                _fetchProfile(); // Refresh data profil
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Profil berhasil diupdate')),
+              try {
+                final response = await http.put(
+                  Uri.parse('${AppConfig.baseUrl}/api/profile'),
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Content-Type': 'application/json',
+                  },
+                  // HANYA mengirimkan 'name' ke backend sesuai dengan model UpdateProfileInput Go
+                  body: json.encode({'name': inputName}),
                 );
+
+                if (response.statusCode == 200) {
+                  if (mounted) {
+                    // PERUBAHAN UTAMA: Langsung perbarui nilai state di UI secara instan!
+                    setState(() {
+                      userName = inputName;
+                    });
+
+                    Navigator.pop(context); // Tutup dialog
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profil berhasil diupdate')),
+                    );
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gagal mengupdate profil')),
+                    );
+                  }
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Terjadi kesalahan koneksi')),
+                  );
+                }
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryContainer,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Simpan'),
           ),
         ],
@@ -138,6 +185,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -146,23 +194,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Center(
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
-                    // Biarkan foto dummy dulu jika belum ada fitur upload foto
-                    backgroundImage: NetworkImage(
-                      'https://lh3.googleusercontent.com/aida-public/AB6AXuDqzOel_Ll3rJq39vSTIpb-gfz1vpbQXojaUFCNLG2_694ks-5hWuQcSbEElY-D-tXiV07XVhmza--88HhPyFHAu4GfrOg5Ta568IcYDRI5-m6a_mmh-ZUyXf3IJxnMF08uWDfAAH2xGqqB6EK7rQwFHJwQYlIlEqhQRIELrB5rUGaz_cFtB3ElHGMI76oz51ahc8kBM7NAH3gME6-TQamgnpuFNVbumY-20l0xI5q6pPmypqY-jy84YM9zAu5rstTDteaWzY8f1CQ',
+                    backgroundColor: AppTheme.primaryContainer.withOpacity(0.1),
+                    child: Text(
+                      userName.isNotEmpty && userName != "Memuat..."
+                          ? userName[0].toUpperCase()
+                          : 'P',
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryContainer,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // 5. Mengganti John Doe dengan variabel userName
                   Text(
                     userName,
                     style: Theme.of(context).textTheme.displayMedium,
                   ),
                   const SizedBox(height: 4),
-
-                  // 6. Mengganti email dummy dengan variabel userEmail
                   Text(
                     userEmail,
                     style: Theme.of(
@@ -188,11 +239,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  _buildProfileOption(Icons.edit_outlined, 'Edit Profil'),
+                  _buildProfileOption(
+                    Icons.edit_outlined,
+                    'Edit Profil',
+                    _showEditProfileDialog,
+                  ),
                   const Divider(height: 1),
-                  _buildProfileOption(Icons.security, 'Keamanan & Privasi'),
+                  _buildProfileOption(Icons.security, 'Keamanan & Privasi', () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Segera hadir!')),
+                    );
+                  }),
                   const Divider(height: 1),
-                  _buildProfileOption(Icons.help_outline, 'Bantuan & FAQ'),
+                  _buildProfileOption(Icons.help_outline, 'Bantuan & FAQ', () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Segera hadir!')),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -219,21 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                onTap: () async {
-                  // Tambahkan penghapus token saat logout
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
-                  await prefs.remove('jwt_token');
-
-                  if (context.mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  }
-                },
+                onTap: () => _logout(),
               ),
             ),
             const SizedBox(height: 32),
@@ -243,12 +292,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileOption(IconData icon, String title) {
+  Widget _buildProfileOption(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: AppTheme.onSurfaceVariant),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.chevron_right, color: AppTheme.outlineVariant),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }
