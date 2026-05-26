@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
+import 'security_screen.dart';
+import 'help_faq_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -246,14 +248,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const Divider(height: 1),
                   _buildProfileOption(Icons.security, 'Keamanan & Privasi', () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Segera hadir!')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SecurityScreen(),
+                      ),
                     );
                   }),
                   const Divider(height: 1),
                   _buildProfileOption(Icons.help_outline, 'Bantuan & FAQ', () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Segera hadir!')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HelpFaqScreen(),
+                      ),
                     );
                   }),
                 ],
