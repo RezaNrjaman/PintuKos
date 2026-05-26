@@ -64,6 +64,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: userName);
+    final emailController = TextEditingController(text: userEmail);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profil'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Nama'),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Panggil API PUT ke backend
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              String? token = prefs.getString('jwt_token');
+
+              final response = await http.put(
+                Uri.parse('${AppConfig.baseUrl}/api/profile'),
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Content-Type': 'application/json',
+                },
+                body: json.encode({
+                  'name': nameController.text,
+                  'email': emailController.text,
+                }),
+              );
+
+              if (response.statusCode == 200) {
+                Navigator.pop(context);
+                _fetchProfile(); // Refresh data profil
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profil berhasil diupdate')),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
